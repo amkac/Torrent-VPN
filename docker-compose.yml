@@ -52,6 +52,8 @@ services:
         restart: true
 
     environment:
+      - PUID=65534
+      - PGID=65534
       - TZ=Europe/Paris
       - WEBUI_PORT=8080
 
