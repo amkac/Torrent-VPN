@@ -1,0 +1,67 @@
+version: "3.8"
+
+name: torrent-vpn
+
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ./gluetun:/gluetun
+    environment:
+      - VPN_SERVICE_PROVIDER=nordvpn
+      - VPN_TYPE=openvpn
+      - OPENVPN_USER=${OPENVPN_USER}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+      - SERVER_COUNTRIES=Netherlands
+      - TZ=Europe/Paris
+      - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24
+      - FIREWALL_VPN_INPUT_PORTS=6881
+      - DOT=off # Disable DNS over TLS
+      # See https://github.com/qdm12/gluetun-wiki/blob/main/setup/servers.md#update-the-vpn-servers-list
+      # - UPDATER_PERIOD=24h
+
+    ports:
+      - 8080:8080 # qBittorren Web UI
+      # qBittorrent incoming connections (optional, for better speeds)
+      - 6881:6881
+      - 6881:6881/udp
+
+    # Healthcheck to verify VPN is working
+    healthcheck:
+      test: ping -c 1 www.google.com || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+
+    # Route ALL traffic through Gluetun
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
+
+    environment:
+      - TZ=Europe/Paris
+      - WEBUI_PORT=8080
+
+    volumes:
+      - ./qbittorrent/config:/config
+      - /mnt/media:/downloads
+
+    healthcheck:
+      test: ping -c 1 www.google.com || exit 1
+      interval: 60s
+      retries: 3
+      start_period: 20s
+      timeout: 10s
