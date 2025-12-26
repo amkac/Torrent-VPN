@@ -61,7 +61,7 @@ services:
 
     volumes:
       - ./qbittorrent/config:/config
-      - /mnt/media:/downloads
+      - /mnt/media:/data
 
     healthcheck:
       test: ping -c 1 www.google.com || exit 1
