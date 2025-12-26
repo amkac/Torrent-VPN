@@ -28,9 +28,9 @@ services:
 
     ports:
       - 8080:8080 # qBittorren Web UI
-      # qBittorrent incoming connections (optional, for better speeds)
-      - 6881:6881
-      - 6881:6881/udp
+      - 6881:6881 # qBittorrent incoming connections (optional, for better speeds)
+      - 6881:6881/udp # qBittorrent incoming connections (optional, for better speeds)
+      - 9696:9696 # prowlarr
 
     # Healthcheck to verify VPN is working
     healthcheck:
@@ -52,8 +52,8 @@ services:
         restart: true
 
     environment:
-      - PUID=65534
-      - PGID=65534
+      - PUID=${PUID}
+      - PGID=${PGID}
       - TZ=Europe/Paris
       - WEBUI_PORT=8080
 
@@ -67,3 +67,20 @@ services:
       retries: 3
       start_period: 20s
       timeout: 10s
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./prowlarr:/config
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        restart: true
+    network_mode: service:gluetun
