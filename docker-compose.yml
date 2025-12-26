@@ -31,6 +31,8 @@ services:
       - 6881:6881 # qBittorrent incoming connections (optional, for better speeds)
       - 6881:6881/udp # qBittorrent incoming connections (optional, for better speeds)
       - 9696:9696 # prowlarr
+      - 7878:7878 # radarr
+      - 8989:8989 # sonarr
 
     # Healthcheck to verify VPN is working
     healthcheck:
@@ -83,4 +85,32 @@ services:
       gluetun:
         condition: service_healthy
         restart: true
+    network_mode: service:gluetun
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./sonarr:/config
+      - /mnt/media:/data
+    network_mode: service:gluetun
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/Paris
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./radarr:/config
+      - /mnt/media:/data
     network_mode: service:gluetun
